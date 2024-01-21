@@ -1,5 +1,6 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
+import 'package:smart_health_diagnosis/pages/user_info_page.dart';
 
 class VitalsPage extends StatefulWidget {
   const VitalsPage({super.key, required this.title});
@@ -46,18 +47,17 @@ class _VitalsPageState extends State<VitalsPage> {
   }
 
   @override
-  void initState() {
-    showDialog(
-      context: context,
-      builder: (context) => const AlertDialog(
-        content: Text("Hi"),
-      ),
-    );
-    super.initState();
-  }
-
-  @override
   Widget build(BuildContext context) {
+    WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
+      showModalBottomSheet(
+          isDismissible: false,
+          enableDrag: false,
+          context: context,
+          builder: (BuildContext context) {
+            return const UserInfoPage();
+          });
+    });
+
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
