@@ -1,5 +1,7 @@
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 import 'package:smart_health_diagnosis/pages/user_info_page.dart';
 
 class VitalsPage extends StatefulWidget {
@@ -50,7 +52,7 @@ class _VitalsPageState extends State<VitalsPage> {
   Widget build(BuildContext context) {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       showModalBottomSheet(
-          isDismissible: false,
+          isDismissible: true,
           enableDrag: false,
           context: context,
           builder: (BuildContext context) {
@@ -105,7 +107,9 @@ class _VitalsPageState extends State<VitalsPage> {
             SizedBox(
               width: 300,
               child: ElevatedButton(
-                onPressed: saveVitals(),
+                onPressed: () {
+                  addVitals();
+                },
                 style: ButtonStyle(
                   backgroundColor: MaterialStatePropertyAll(
                       Theme.of(context).colorScheme.inversePrimary),
@@ -188,22 +192,59 @@ class _VitalsPageState extends State<VitalsPage> {
     );
   }
 
-  saveVitals() {
-    if (kDebugMode) {
-      print("Pressed");
-    }
-    DateTime dateTime = DateTime.now();
-    String actualDateTime =
-        "${dateTime.year.toString()}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-    String currentVital = dropDownValue;
-    String currentResult = resultController.value.text;
+  void addVitals() async {
+    Map<String, String> vitals = {
+      'name': dropDownValue,
+      'value': resultController.value.text,
+      'patientid': "null",
+    };
 
-    setState(() {
-      timeOfRecording.add(actualDateTime);
-      vitalSigns.add(currentVital);
-      results.add(currentResult);
-      listCount = timeOfRecording.length;
-    });
-    // print(listCount);
+    try {
+      final res = await http.post(
+        Uri.parse("http://localhost/smart_health/add_vitals.php"),
+        headers: {
+          // Add CORS-related header to allow requests from your specific origin
+          'Access-Control-Allow-Origin': "*",
+          'Access-Control-Allow-Methods': "*",
+          'Access-Control-Allow-Headers': 'Content-Type',
+          // Specify allowed headers
+          'Access-Control-Allow-Credentials': 'true',
+          // If credentials are used
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(vitals),
+      );
+
+      print(vitals);
+
+      if (res.statusCode == 200) {
+        print("Vitals added");
+        print(res.body);
+      } else {
+        print("Failed to add vitals");
+        print(res.statusCode);
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
   }
+
+  // saveVitals() {
+  //   if (kDebugMode) {
+  //     print("Pressed");
+  //   }
+  //   DateTime dateTime = DateTime.now();
+  //   String actualDateTime =
+  //       "${dateTime.year.toString()}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+  //   String currentVital = dropDownValue;
+  //   String currentResult = resultController.value.text;
+  //
+  //   setState(() {
+  //     timeOfRecording.add(actualDateTime);
+  //     vitalSigns.add(currentVital);
+  //     results.add(currentResult);
+  //     listCount = timeOfRecording.length;
+  //   });
+  //   // print(listCount);
+  // }
 }

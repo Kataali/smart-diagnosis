@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class UserInfoPage extends StatefulWidget {
   const UserInfoPage({super.key});
@@ -68,6 +71,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
               width: 200,
               child: ElevatedButton(
                 onPressed: () {
+                  addUserInfo();
                   Navigator.of(context).pop();
                 },
                 style: ButtonStyle(
@@ -84,10 +88,50 @@ class _UserInfoPageState extends State<UserInfoPage> {
           const Text(
             "Enter Info to proceed. ",
             style: TextStyle(
-                color: Colors.red, fontSize: 16, fontWeight: FontWeight.w500),
+              color: Colors.red,
+              fontSize: 16,
+              fontWeight: FontWeight.w500,
+            ),
           )
         ]),
       ),
     );
+  }
+
+  void addUserInfo() async {
+    Map<String, String> userInfo = {
+      'name': nameController.value.text,
+      'age': ageController.value.text,
+      'gender': dropDownValue,
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse("http://localhost/smart_health/add_patient.php"),
+        headers: {
+          // Add CORS-related header to allow requests from your specific origin
+          'Access-Control-Allow-Origin': "*",
+          'Access-Control-Allow-Methods': "*",
+          'Access-Control-Allow-Headers': 'Content-Type',
+          // Specify allowed headers
+          'Access-Control-Allow-Credentials': 'true',
+          // If credentials are used
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(userInfo),
+      );
+
+      print(userInfo);
+
+      if (res.statusCode == 200) {
+        print("client added");
+        print(res.body);
+      } else {
+        print("Failed to add client");
+        print(res.statusCode);
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
   }
 }

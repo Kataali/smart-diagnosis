@@ -1,4 +1,7 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
 
 class ConsultationPage extends StatelessWidget {
   ConsultationPage({super.key});
@@ -43,7 +46,9 @@ class ConsultationPage extends StatelessWidget {
             child: SizedBox(
               width: 300,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  fileComplaint();
+                },
                 style: ButtonStyle(
                   backgroundColor: MaterialStatePropertyAll(
                       Theme.of(context).colorScheme.inversePrimary),
@@ -104,5 +109,42 @@ class ConsultationPage extends StatelessWidget {
         ]),
       ),
     );
+  }
+
+  void fileComplaint() async {
+    Map<String, String> vitals = {
+      'complaint': complaintsController.value.text,
+      'note': notesController.value.text,
+      'patientid': "null",
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse("http://localhost/smart_health/add_exam.php"),
+        headers: {
+          // Add CORS-related header to allow requests from your specific origin
+          'Access-Control-Allow-Origin': "*",
+          'Access-Control-Allow-Methods': "*",
+          'Access-Control-Allow-Headers': 'Content-Type',
+          // Specify allowed headers
+          'Access-Control-Allow-Credentials': 'true',
+          // If credentials are used
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(vitals),
+      );
+
+      print(vitals);
+
+      if (res.statusCode == 200) {
+        print("Complaint Filed");
+        print(res.body);
+      } else {
+        print("Failed to file complaints");
+        print(res.statusCode);
+      }
+    } catch (e) {
+      print("Error: $e");
+    }
   }
 }
