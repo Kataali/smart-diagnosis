@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
 
 class PredictionPage extends StatefulWidget {
+  static const routeName = "/prediction_page";
+
   const PredictionPage({super.key});
 
   @override

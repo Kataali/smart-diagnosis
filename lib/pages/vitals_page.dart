@@ -6,11 +6,14 @@ import 'package:provider/provider.dart';
 import 'package:smart_health_diagnosis/models/name_data.dart';
 import 'package:smart_health_diagnosis/pages/consultation_page.dart';
 import 'package:smart_health_diagnosis/pages/user_info_page.dart';
+import 'package:smart_health_diagnosis/widgets/route_button.dart';
 
 class VitalsPage extends StatefulWidget {
-  const VitalsPage({super.key, required this.title});
+  static const routeName = "/vitals_page";
 
-  final String title;
+  const VitalsPage({
+    super.key,
+  });
 
   @override
   State<VitalsPage> createState() => _VitalsPageState();
@@ -71,148 +74,145 @@ class _VitalsPageState extends State<VitalsPage> {
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
-        title: Text(widget.title),
+        title: const Text('Record New Vitals'),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 8.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.start,
-          children: <Widget>[
-            Text(userName),
-            SizedBox(
-              width: 250,
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 8.0),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.start,
+            children: <Widget>[
+              Text(userName),
+              SizedBox(
+                width: 250,
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    const Text("Vital Sign:"),
+                    DropdownButton(
+                        value: dropDownValue,
+                        items: items
+                            .map(
+                              (String items) => DropdownMenuItem(
+                                value: items,
+                                child: Text(items),
+                              ),
+                            )
+                            .toList(),
+                        onChanged: (String? newVal) {
+                          setState(() {
+                            dropDownValue = newVal!;
+                          });
+                        }),
+                  ],
+                ),
+              ),
+              Padding(
+                padding: const EdgeInsets.fromLTRB(0, 35, 0, 25),
+                child: SizedBox(
+                  width: 250,
+                  child: TextField(
+                    decoration: const InputDecoration(labelText: 'Results'),
+                    controller: resultController,
+                  ),
+                ),
+              ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.end,
                 children: [
-                  const Text("Vital Sign:"),
-                  DropdownButton(
-                      value: dropDownValue,
-                      items: items
-                          .map(
-                            (String items) => DropdownMenuItem(
-                              value: items,
-                              child: Text(items),
-                            ),
-                          )
-                          .toList(),
-                      onChanged: (String? newVal) {
-                        setState(() {
-                          dropDownValue = newVal!;
-                        });
-                      }),
+                  Padding(
+                    padding: const EdgeInsets.only(right: 25.0),
+                    child: RouteButton(onPressed: () {
+                      Navigator.pushNamed(context, ConsultationPage.routeName);
+                    }),
+                  ),
                 ],
               ),
-            ),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Padding(
-                  padding: const EdgeInsets.fromLTRB(0, 35, 0, 25),
-                  child: SizedBox(
-                    width: 250,
-                    child: TextField(
-                      decoration: const InputDecoration(labelText: 'Results'),
-                      controller: resultController,
-                    ),
+              SizedBox(
+                width: 300,
+                child: ElevatedButton(
+                  onPressed: () {
+                    // addVitals();
+                    resultController.clear();
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStatePropertyAll(
+                        Theme.of(context).colorScheme.inversePrimary),
+                  ),
+                  child: const Text(
+                    'Done',
+                    style: TextStyle(color: Colors.black),
                   ),
                 ),
-                ElevatedButton(
-                  onPressed: () {},
-                  child: const Text("Next"),
+              ),
+              const Padding(
+                padding: EdgeInsets.only(top: 35.0),
+                child: Text(
+                  "Recorded Vitals",
+                  style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
                 ),
-              ],
-            ),
-            SizedBox(
-              width: 300,
-              child: ElevatedButton(
-                onPressed: () {
-                  // addVitals();
-
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => ConsultationPage(),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                    child: SingleChildScrollView(
+                      child: DataTable(
+                          headingRowColor: MaterialStateProperty.all(
+                              Theme.of(context).colorScheme.inversePrimary),
+                          headingTextStyle:
+                              const TextStyle(fontWeight: FontWeight.bold),
+                          columns: const [
+                            DataColumn(
+                              label: Expanded(child: Text("Time")),
+                            ),
+                            DataColumn(
+                              label: Text("Vital Sign"),
+                            ),
+                            DataColumn(
+                              label: Text("Result"),
+                            )
+                          ],
+                          rows: [
+                            DataRow(cells: [
+                              DataCell(
+                                Text(timeOfRecording[0]),
+                              ),
+                              DataCell(
+                                Text(vitalSigns[0]),
+                              ),
+                              DataCell(
+                                Text(results[0]),
+                              ),
+                            ]),
+                            DataRow(cells: [
+                              DataCell(
+                                Text(timeOfRecording[1]),
+                              ),
+                              DataCell(
+                                Text(vitalSigns[1]),
+                              ),
+                              DataCell(
+                                Text(results[1]),
+                              ),
+                            ]),
+                            DataRow(cells: [
+                              DataCell(
+                                Text(timeOfRecording[2]),
+                              ),
+                              DataCell(
+                                Text(vitalSigns[2]),
+                              ),
+                              DataCell(
+                                Text(results[2]),
+                              ),
+                            ]),
+                          ]),
                     ),
-                  );
-                  resultController.clear();
-                },
-                style: ButtonStyle(
-                  backgroundColor: MaterialStatePropertyAll(
-                      Theme.of(context).colorScheme.inversePrimary),
-                ),
-                child: const Text(
-                  'Done',
-                  style: TextStyle(color: Colors.black),
-                ),
-              ),
-            ),
-            const Padding(
-              padding: EdgeInsets.only(top: 35.0),
-              child: Text(
-                "Recorded Vitals",
-                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
-              ),
-            ),
-            Row(
-              children: [
-                Expanded(
-                  child: SingleChildScrollView(
-                    child: DataTable(
-                        headingRowColor: MaterialStateProperty.all(
-                            Theme.of(context).colorScheme.inversePrimary),
-                        headingTextStyle:
-                            const TextStyle(fontWeight: FontWeight.bold),
-                        columns: const [
-                          DataColumn(
-                            label: Expanded(child: Text("Time")),
-                          ),
-                          DataColumn(
-                            label: Text("Vital Sign"),
-                          ),
-                          DataColumn(
-                            label: Text("Result"),
-                          )
-                        ],
-                        rows: [
-                          DataRow(cells: [
-                            DataCell(
-                              Text(timeOfRecording[0]),
-                            ),
-                            DataCell(
-                              Text(vitalSigns[0]),
-                            ),
-                            DataCell(
-                              Text(results[0]),
-                            ),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(
-                              Text(timeOfRecording[1]),
-                            ),
-                            DataCell(
-                              Text(vitalSigns[1]),
-                            ),
-                            DataCell(
-                              Text(results[1]),
-                            ),
-                          ]),
-                          DataRow(cells: [
-                            DataCell(
-                              Text(timeOfRecording[2]),
-                            ),
-                            DataCell(
-                              Text(vitalSigns[2]),
-                            ),
-                            DataCell(
-                              Text(results[2]),
-                            ),
-                          ]),
-                        ]),
                   ),
-                ),
-              ],
-            )
-          ],
+                ],
+              )
+            ],
+          ),
         ),
       ),
     );
