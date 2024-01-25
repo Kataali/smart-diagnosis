@@ -2,12 +2,13 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
-import 'package:provider/provider.dart';
 import 'package:smart_health_diagnosis/pages/prediction_page.dart';
 
-import '../models/name_data.dart';
+import '../widgets/route_button.dart';
 
 class ConsultationPage extends StatefulWidget {
+  static const routeName = "/consultation_page";
+
   const ConsultationPage({super.key});
 
   @override
@@ -29,8 +30,6 @@ class _ConsultationPageState extends State<ConsultationPage> {
 
   @override
   Widget build(BuildContext context) {
-    String userName = Provider.of<NameData>(context).username;
-
     return Scaffold(
       appBar: AppBar(
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
@@ -39,7 +38,6 @@ class _ConsultationPageState extends State<ConsultationPage> {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0),
         child: Column(children: [
-          Text(userName),
           SizedBox(
             width: 350,
             child: TextField(
@@ -54,6 +52,17 @@ class _ConsultationPageState extends State<ConsultationPage> {
               controller: notesController,
             ),
           ),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.end,
+            children: [
+              Padding(
+                padding: const EdgeInsets.only(right: 25.0),
+                child: RouteButton(onPressed: () {
+                  Navigator.pushNamed(context, PredictionPage.routeName);
+                }),
+              ),
+            ],
+          ),
           Padding(
             padding: const EdgeInsets.symmetric(vertical: 25.0),
             child: SizedBox(
@@ -61,12 +70,7 @@ class _ConsultationPageState extends State<ConsultationPage> {
               child: ElevatedButton(
                 onPressed: () {
                   fileComplaint();
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (context) => const PredictionPage(),
-                    ),
-                  );
+                  Navigator.pushNamed(context, PredictionPage.routeName);
                 },
                 style: ButtonStyle(
                   backgroundColor: MaterialStatePropertyAll(
