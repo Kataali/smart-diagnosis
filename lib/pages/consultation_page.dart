@@ -2,22 +2,34 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:smart_health_diagnosis/pages/prediction_page.dart';
 
-class ConsultationPage extends StatelessWidget {
-  ConsultationPage({super.key});
+import '../models/name_data.dart';
+
+class ConsultationPage extends StatefulWidget {
+  const ConsultationPage({super.key});
+
+  @override
+  State<ConsultationPage> createState() => _ConsultationPageState();
+}
+
+class _ConsultationPageState extends State<ConsultationPage> {
   final complaintsController = TextEditingController();
+
   final notesController = TextEditingController();
+  final complaints = <String>[
+    'Sore Throat',
+    'Vomiting',
+  ];
+  final notes = <String>[
+    'mostly evenings. 3 days today',
+    '5 last night',
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final complaints = <String>[
-      'Sore Throat',
-      'Vomiting',
-    ];
-    final notes = <String>[
-      'mostly evenings. 3 days today',
-      '5 last night',
-    ];
+    String userName = Provider.of<NameData>(context).username;
 
     return Scaffold(
       appBar: AppBar(
@@ -27,6 +39,7 @@ class ConsultationPage extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0),
         child: Column(children: [
+          Text(userName),
           SizedBox(
             width: 350,
             child: TextField(
@@ -48,6 +61,12 @@ class ConsultationPage extends StatelessWidget {
               child: ElevatedButton(
                 onPressed: () {
                   fileComplaint();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PredictionPage(),
+                    ),
+                  );
                 },
                 style: ButtonStyle(
                   backgroundColor: MaterialStatePropertyAll(
@@ -134,17 +153,31 @@ class ConsultationPage extends StatelessWidget {
         body: jsonEncode(vitals),
       );
 
-      print(vitals);
-
       if (res.statusCode == 200) {
-        print("Complaint Filed");
-        print(res.body);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Complaint Successfully filed"),
+            ),
+          );
+        }
       } else {
-        print("Failed to file complaints");
-        print(res.statusCode);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Failed to file complaint"),
+            ),
+          );
+        }
       }
     } catch (e) {
-      print("Error: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error $e"),
+          ),
+        );
+      }
     }
   }
 }

@@ -2,6 +2,9 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:smart_health_diagnosis/models/name_data.dart';
+import 'package:smart_health_diagnosis/pages/consultation_page.dart';
 import 'package:smart_health_diagnosis/pages/user_info_page.dart';
 
 class VitalsPage extends StatefulWidget {
@@ -16,7 +19,6 @@ class VitalsPage extends StatefulWidget {
 class _VitalsPageState extends State<VitalsPage> {
   String dropDownValue = 'Weight';
   final resultController = TextEditingController();
-  late int listCount;
 
   final items = <String>[
     'Weight',
@@ -49,7 +51,7 @@ class _VitalsPageState extends State<VitalsPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       showModalBottomSheet(
           isDismissible: true,
@@ -59,6 +61,12 @@ class _VitalsPageState extends State<VitalsPage> {
             return const UserInfoPage();
           });
     });
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String userName = Provider.of<NameData>(context).username;
 
     return Scaffold(
       appBar: AppBar(
@@ -70,6 +78,7 @@ class _VitalsPageState extends State<VitalsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
+            Text(userName),
             SizedBox(
               width: 250,
               child: Row(
@@ -94,21 +103,38 @@ class _VitalsPageState extends State<VitalsPage> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 35, 0, 25),
-              child: SizedBox(
-                width: 250,
-                child: TextField(
-                  decoration: const InputDecoration(labelText: 'Results'),
-                  controller: resultController,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 35, 0, 25),
+                  child: SizedBox(
+                    width: 250,
+                    child: TextField(
+                      decoration: const InputDecoration(labelText: 'Results'),
+                      controller: resultController,
+                    ),
+                  ),
                 ),
-              ),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text("Next"),
+                ),
+              ],
             ),
             SizedBox(
               width: 300,
               child: ElevatedButton(
                 onPressed: () {
-                  addVitals();
+                  // addVitals();
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ConsultationPage(),
+                    ),
+                  );
+                  resultController.clear();
                 },
                 style: ButtonStyle(
                   backgroundColor: MaterialStatePropertyAll(
@@ -215,18 +241,41 @@ class _VitalsPageState extends State<VitalsPage> {
         body: jsonEncode(vitals),
       );
 
-      print(vitals);
-
       if (res.statusCode == 200) {
-        print("Vitals added");
-        print(res.body);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Vitals Successfully recorded"),
+            ),
+          );
+        }
       } else {
-        print("Failed to add vitals");
-        print(res.statusCode);
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Failed to record Vitals"),
+            ),
+          );
+        }
       }
     } catch (e) {
-      print("Error: $e");
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: $e"),
+          ),
+        );
+      }
     }
+  }
+
+  Future<void> getVitals() async {
+    final queryParams = {
+      // 'param1': widget.userName,
+    };
+    const url = "http://localhost/smart_health/get_logged_vitals";
+    // final res =
+    //     await http.get(Uri.parse(url).replace(queryParameters: queryParams));
   }
 
   // saveVitals() {
