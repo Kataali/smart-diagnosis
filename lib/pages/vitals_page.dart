@@ -1,5 +1,10 @@
-import 'package:flutter/foundation.dart';
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:smart_health_diagnosis/models/name_data.dart';
+import 'package:smart_health_diagnosis/pages/consultation_page.dart';
 import 'package:smart_health_diagnosis/pages/user_info_page.dart';
 
 class VitalsPage extends StatefulWidget {
@@ -14,7 +19,6 @@ class VitalsPage extends StatefulWidget {
 class _VitalsPageState extends State<VitalsPage> {
   String dropDownValue = 'Weight';
   final resultController = TextEditingController();
-  late int listCount;
 
   final items = <String>[
     'Weight',
@@ -47,16 +51,22 @@ class _VitalsPageState extends State<VitalsPage> {
   }
 
   @override
-  Widget build(BuildContext context) {
+  void initState() {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       showModalBottomSheet(
-          isDismissible: false,
+          isDismissible: true,
           enableDrag: false,
           context: context,
           builder: (BuildContext context) {
             return const UserInfoPage();
           });
     });
+    super.initState();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    String userName = Provider.of<NameData>(context).username;
 
     return Scaffold(
       appBar: AppBar(
@@ -68,6 +78,7 @@ class _VitalsPageState extends State<VitalsPage> {
         child: Column(
           mainAxisAlignment: MainAxisAlignment.start,
           children: <Widget>[
+            Text(userName),
             SizedBox(
               width: 250,
               child: Row(
@@ -92,20 +103,39 @@ class _VitalsPageState extends State<VitalsPage> {
                 ],
               ),
             ),
-            Padding(
-              padding: const EdgeInsets.fromLTRB(0, 35, 0, 25),
-              child: SizedBox(
-                width: 250,
-                child: TextField(
-                  decoration: const InputDecoration(labelText: 'Results'),
-                  controller: resultController,
+            Row(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(0, 35, 0, 25),
+                  child: SizedBox(
+                    width: 250,
+                    child: TextField(
+                      decoration: const InputDecoration(labelText: 'Results'),
+                      controller: resultController,
+                    ),
+                  ),
                 ),
-              ),
+                ElevatedButton(
+                  onPressed: () {},
+                  child: const Text("Next"),
+                ),
+              ],
             ),
             SizedBox(
               width: 300,
               child: ElevatedButton(
-                onPressed: saveVitals(),
+                onPressed: () {
+                  // addVitals();
+
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => ConsultationPage(),
+                    ),
+                  );
+                  resultController.clear();
+                },
                 style: ButtonStyle(
                   backgroundColor: MaterialStatePropertyAll(
                       Theme.of(context).colorScheme.inversePrimary),
@@ -188,22 +218,82 @@ class _VitalsPageState extends State<VitalsPage> {
     );
   }
 
-  saveVitals() {
-    if (kDebugMode) {
-      print("Pressed");
-    }
-    DateTime dateTime = DateTime.now();
-    String actualDateTime =
-        "${dateTime.year.toString()}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-    String currentVital = dropDownValue;
-    String currentResult = resultController.value.text;
+  void addVitals() async {
+    Map<String, String> vitals = {
+      'name': dropDownValue,
+      'value': resultController.value.text,
+      'patientid': "null",
+    };
 
-    setState(() {
-      timeOfRecording.add(actualDateTime);
-      vitalSigns.add(currentVital);
-      results.add(currentResult);
-      listCount = timeOfRecording.length;
-    });
-    // print(listCount);
+    try {
+      final res = await http.post(
+        Uri.parse("http://localhost/smart_health/add_vitals.php"),
+        headers: {
+          // Add CORS-related header to allow requests from your specific origin
+          'Access-Control-Allow-Origin': "*",
+          'Access-Control-Allow-Methods': "*",
+          'Access-Control-Allow-Headers': 'Content-Type',
+          // Specify allowed headers
+          'Access-Control-Allow-Credentials': 'true',
+          // If credentials are used
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(vitals),
+      );
+
+      if (res.statusCode == 200) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Vitals Successfully recorded"),
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Failed to record Vitals"),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error: $e"),
+          ),
+        );
+      }
+    }
   }
+
+  Future<void> getVitals() async {
+    final queryParams = {
+      // 'param1': widget.userName,
+    };
+    const url = "http://localhost/smart_health/get_logged_vitals";
+    // final res =
+    //     await http.get(Uri.parse(url).replace(queryParameters: queryParams));
+  }
+
+  // saveVitals() {
+  //   if (kDebugMode) {
+  //     print("Pressed");
+  //   }
+  //   DateTime dateTime = DateTime.now();
+  //   String actualDateTime =
+  //       "${dateTime.year.toString()}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
+  //   String currentVital = dropDownValue;
+  //   String currentResult = resultController.value.text;
+  //
+  //   setState(() {
+  //     timeOfRecording.add(actualDateTime);
+  //     vitalSigns.add(currentVital);
+  //     results.add(currentResult);
+  //     listCount = timeOfRecording.length;
+  //   });
+  //   // print(listCount);
+  // }
 }

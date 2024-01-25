@@ -1,20 +1,35 @@
-import 'package:flutter/material.dart';
+import 'dart:convert';
 
-class ConsultationPage extends StatelessWidget {
-  ConsultationPage({super.key});
+import 'package:flutter/material.dart';
+import 'package:http/http.dart' as http;
+import 'package:provider/provider.dart';
+import 'package:smart_health_diagnosis/pages/prediction_page.dart';
+
+import '../models/name_data.dart';
+
+class ConsultationPage extends StatefulWidget {
+  const ConsultationPage({super.key});
+
+  @override
+  State<ConsultationPage> createState() => _ConsultationPageState();
+}
+
+class _ConsultationPageState extends State<ConsultationPage> {
   final complaintsController = TextEditingController();
+
   final notesController = TextEditingController();
+  final complaints = <String>[
+    'Sore Throat',
+    'Vomiting',
+  ];
+  final notes = <String>[
+    'mostly evenings. 3 days today',
+    '5 last night',
+  ];
 
   @override
   Widget build(BuildContext context) {
-    final complaints = <String>[
-      'Sore Throat',
-      'Vomiting',
-    ];
-    final notes = <String>[
-      'mostly evenings. 3 days today',
-      '5 last night',
-    ];
+    String userName = Provider.of<NameData>(context).username;
 
     return Scaffold(
       appBar: AppBar(
@@ -24,6 +39,7 @@ class ConsultationPage extends StatelessWidget {
       body: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 15.0),
         child: Column(children: [
+          Text(userName),
           SizedBox(
             width: 350,
             child: TextField(
@@ -43,7 +59,15 @@ class ConsultationPage extends StatelessWidget {
             child: SizedBox(
               width: 300,
               child: ElevatedButton(
-                onPressed: () {},
+                onPressed: () {
+                  fileComplaint();
+                  Navigator.push(
+                    context,
+                    MaterialPageRoute(
+                      builder: (context) => const PredictionPage(),
+                    ),
+                  );
+                },
                 style: ButtonStyle(
                   backgroundColor: MaterialStatePropertyAll(
                       Theme.of(context).colorScheme.inversePrimary),
@@ -104,5 +128,56 @@ class ConsultationPage extends StatelessWidget {
         ]),
       ),
     );
+  }
+
+  void fileComplaint() async {
+    Map<String, String> vitals = {
+      'complaint': complaintsController.value.text,
+      'note': notesController.value.text,
+      'patientid': "null",
+    };
+
+    try {
+      final res = await http.post(
+        Uri.parse("http://localhost/smart_health/add_exam.php"),
+        headers: {
+          // Add CORS-related header to allow requests from your specific origin
+          'Access-Control-Allow-Origin': "*",
+          'Access-Control-Allow-Methods': "*",
+          'Access-Control-Allow-Headers': 'Content-Type',
+          // Specify allowed headers
+          'Access-Control-Allow-Credentials': 'true',
+          // If credentials are used
+          'Content-Type': 'application/json; charset=UTF-8',
+        },
+        body: jsonEncode(vitals),
+      );
+
+      if (res.statusCode == 200) {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Complaint Successfully filed"),
+            ),
+          );
+        }
+      } else {
+        if (context.mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text("Failed to file complaint"),
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      if (context.mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text("Error $e"),
+          ),
+        );
+      }
+    }
   }
 }
