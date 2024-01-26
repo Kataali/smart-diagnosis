@@ -15,6 +15,8 @@ class UserInfoPage extends StatefulWidget {
 class _UserInfoPageState extends State<UserInfoPage> {
   String dropDownValue = "Male";
 
+  late String userId;
+
   final ageController = TextEditingController();
 
   final nameController = TextEditingController();
@@ -25,7 +27,6 @@ class _UserInfoPageState extends State<UserInfoPage> {
   Widget build(BuildContext context) {
     return Center(
       child: Column(children: [
-        Text(Provider.of<NameData>(context).username),
         SizedBox(
           width: 300,
           child: TextField(
@@ -75,11 +76,14 @@ class _UserInfoPageState extends State<UserInfoPage> {
           child: SizedBox(
             width: 200,
             child: ElevatedButton(
-              onPressed: () {
-                // addUserInfo();
+              onPressed: () async {
+                final retrievedId = await addUserInfo();
                 setState(() {
                   Provider.of<NameData>(context, listen: false)
                       .updateName(nameController.value.text);
+
+                  Provider.of<NameData>(context, listen: false)
+                      .updateId(retrievedId);
                 });
                 Navigator.of(context).pop(context);
               },
@@ -106,7 +110,7 @@ class _UserInfoPageState extends State<UserInfoPage> {
     );
   }
 
-  void addUserInfo() async {
+  Future<String> addUserInfo() async {
     Map<String, String> userInfo = {
       'name': nameController.value.text,
       'age': ageController.value.text,
@@ -118,13 +122,6 @@ class _UserInfoPageState extends State<UserInfoPage> {
         Uri.parse("http://localhost/smart_health/add_patient.php"),
         headers: {
           // Add CORS-related header to allow requests from your specific origin
-          'Access-Control-Allow-Origin': "*",
-          'Access-Control-Allow-Methods': "*",
-          'Access-Control-Allow-Headers': 'Content-Type',
-          // Specify allowed headers
-          'Access-Control-Allow-Credentials': 'true',
-          // If credentials are used
-          'Content-Type': 'application/json; charset=UTF-8',
         },
         body: jsonEncode(userInfo),
       );
@@ -139,7 +136,22 @@ class _UserInfoPageState extends State<UserInfoPage> {
         print(res.statusCode);
       }
     } catch (e) {
-      print("Error: $e");
+      print("Error1: $e");
     }
+
+    final queryParams = {
+      'param1': nameController.value.text,
+    };
+    const url = "http://localhost/smart_health/get_logged_id.php";
+    try {
+      final res =
+          await http.get(Uri.parse(url).replace(queryParameters: queryParams));
+      final resData = json.decode(res.body);
+      userId = resData["id"];
+      print(res.body);
+    } catch (e) {
+      print("Error2: $e");
+    }
+    return userId;
   }
 }
