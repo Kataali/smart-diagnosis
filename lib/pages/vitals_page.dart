@@ -9,7 +9,7 @@ import 'package:smart_health_diagnosis/pages/user_info_page.dart';
 import 'package:smart_health_diagnosis/providers/vitals_provider.dart';
 import 'package:smart_health_diagnosis/widgets/route_button.dart';
 
-import '../models/vital_data.dart';
+import '../models/vital_model.dart';
 
 class VitalsPage extends StatefulWidget {
   static const routeName = "/vitals_page";
@@ -126,13 +126,10 @@ class _VitalsPageState extends State<VitalsPage> {
                 child: ElevatedButton(
                   onPressed: () async {
                     addVitals();
-                    final retrievedVital = await getVitals();
-                    // print([
-                    //   retrievedVital.vitalSign,
-                    //   retrievedVital.value,
-                    //   retrievedVital.time
-                    // ]);
                     resultController.clear();
+                    final List<Vital> retrievedVitals = await getVitals();
+                    provider.emptyVitalsList();
+                    provider.mergeWithVitalList(retrievedVitals);
                   },
                   style: ButtonStyle(
                     backgroundColor: MaterialStatePropertyAll(
@@ -155,45 +152,66 @@ class _VitalsPageState extends State<VitalsPage> {
                 children: [
                   Expanded(
                     child: SingleChildScrollView(
-                      child: Consumer<VitalsProvider>(
-                        builder: (BuildContext context, VitalsProvider value,
-                            Widget? child) {
-                          return DataTable(
-                            headingRowColor: MaterialStateProperty.all(
-                                Theme.of(context).colorScheme.inversePrimary),
-                            headingTextStyle:
-                                const TextStyle(fontWeight: FontWeight.bold),
-                            columns: const [
-                              DataColumn(
-                                label: Expanded(child: Text("Time")),
-                              ),
-                              DataColumn(
-                                label: Text("Vital Sign"),
-                              ),
-                              DataColumn(
-                                label: Text("Result"),
-                              )
-                            ],
-                            rows: List.generate(
-                              provider.vitalListLength,
-                              (index) {
-                                Vital vital = provider.getVitalByIndex(index);
-                                return DataRow(
-                                  cells: <DataCell>[
-                                    DataCell(
-                                      Text(vital.time),
+                      child: provider.vitalListLength != 0
+                          ? Consumer<VitalsProvider>(
+                              builder: (BuildContext context,
+                                  VitalsProvider value, Widget? child) {
+                                return DataTable(
+                                  headingRowColor: MaterialStateProperty.all(
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .inversePrimary),
+                                  headingTextStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                  columns: const [
+                                    DataColumn(
+                                      label: Expanded(child: Text("Time")),
                                     ),
-                                    DataCell(
-                                      Text(vital.vitalSign),
+                                    DataColumn(
+                                      label: Text("Vital Sign"),
                                     ),
-                                    DataCell(Text(vital.value))
+                                    DataColumn(
+                                      label: Text("Result"),
+                                    )
                                   ],
+                                  rows: List.generate(
+                                    provider.vitalListLength,
+                                    (index) {
+                                      Vital vital =
+                                          provider.getVitalByIndex(index);
+                                      return DataRow(
+                                        cells: <DataCell>[
+                                          DataCell(
+                                            Text(vital.time),
+                                          ),
+                                          DataCell(
+                                            Text(vital.vitalSign),
+                                          ),
+                                          DataCell(Text(vital.value))
+                                        ],
+                                      );
+                                    },
+                                  ),
                                 );
                               },
+                            )
+                          : const Padding(
+                              padding: EdgeInsets.only(top: 25.0),
+                              child: Column(
+                                children: [
+                                  Icon(
+                                    Icons.speaker_notes_off_outlined,
+                                    size: 200,
+                                  ),
+                                  Text(
+                                    "No Logged Records Yet",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontSize: 18, color: Colors.red),
+                                  ),
+                                ],
+                              ),
                             ),
-                          );
-                        },
-                      ),
                     ),
                   ),
                 ],
@@ -247,7 +265,9 @@ class _VitalsPageState extends State<VitalsPage> {
     }
   }
 
-  Future<Vital> getVitals() async {
+  Future<List<Vital>> getVitals() async {
+    List<Vital> interimVitals = [];
+
     final queryParams = {
       'param1': userId,
     };
@@ -257,32 +277,22 @@ class _VitalsPageState extends State<VitalsPage> {
           await http.get(Uri.parse(url).replace(queryParameters: queryParams));
       if (res.statusCode == 200) {
         final resData = jsonDecode(res.body);
-        print(resData);
-        print(resData.length);
-        return Vital.fromJson(resData[0]);
+        // print(resData);
+        // print(resData.length);
+        // return Vital.fromJson(resData[0]);
+        resData.forEach((i) {
+          Vital vital = Vital.fromJson(i);
+          interimVitals.add(vital);
+        });
+        return interimVitals;
       }
-      throw "Unable to get recorded vitals";
+      throw "Unable to get logged vitals";
     } on Exception {
-      throw "Unable to get recorded vitals";
+      throw "Unable to get logged vitals";
     }
   }
 
-  // saveVitals() {
-  //   if (kDebugMode) {
-  //     print("Pressed");
-  //   }
   //   DateTime dateTime = DateTime.now();
   //   String actualDateTime =
   //       "${dateTime.year.toString()}-${dateTime.month.toString().padLeft(2, '0')}-${dateTime.day.toString().padLeft(2, '0')} ${dateTime.hour.toString().padLeft(2, '0')}:${dateTime.minute.toString().padLeft(2, '0')}";
-  //   String currentVital = dropDownValue;
-  //   String currentResult = resultController.value.text;
-  //
-  //   setState(() {
-  //     timeOfRecording.add(actualDateTime);
-  //     vitalSigns.add(currentVital);
-  //     results.add(currentResult);
-  //     listCount = timeOfRecording.length;
-  //   });
-  //   // print(listCount);
-  // }
 }
