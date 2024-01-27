@@ -23,6 +23,10 @@ class _UserInfoPageState extends State<UserInfoPage> {
 
   final items = <String>["Male", "Female"];
 
+  final String warning = "The Name field or the Age field cannot be Empty";
+
+  bool isEmpty = false;
+
   @override
   Widget build(BuildContext context) {
     return Center(
@@ -77,15 +81,22 @@ class _UserInfoPageState extends State<UserInfoPage> {
             width: 200,
             child: ElevatedButton(
               onPressed: () async {
-                final retrievedId = await addUserInfo();
-                setState(() {
-                  Provider.of<NameData>(context, listen: false)
-                      .updateName(nameController.value.text);
+                if (nameController.value.text.isEmpty ||
+                    ageController.value.text.isEmpty) {
+                  setState(() {
+                    isEmpty = true;
+                  });
+                } else {
+                  final retrievedId = await addUserInfo();
+                  setState(() {
+                    Provider.of<NameData>(context, listen: false)
+                        .updateName(nameController.value.text);
 
-                  Provider.of<NameData>(context, listen: false)
-                      .updateId(retrievedId);
-                });
-                Navigator.of(context).pop(context);
+                    Provider.of<NameData>(context, listen: false)
+                        .updateId(retrievedId);
+                  });
+                  Navigator.of(context).pop(context);
+                }
               },
               style: ButtonStyle(
                 backgroundColor: MaterialStatePropertyAll(
@@ -105,7 +116,17 @@ class _UserInfoPageState extends State<UserInfoPage> {
             fontSize: 16,
             fontWeight: FontWeight.w500,
           ),
-        )
+        ),
+        isEmpty
+            ? Text(
+                warning,
+                style: const TextStyle(
+                  color: Colors.red,
+                  fontStyle: FontStyle.italic,
+                  fontWeight: FontWeight.bold,
+                ),
+              )
+            : const Text("")
       ]),
     );
   }
@@ -120,13 +141,9 @@ class _UserInfoPageState extends State<UserInfoPage> {
     try {
       final res = await http.post(
         Uri.parse("http://localhost/smart_health/add_patient.php"),
-        headers: {
-          // Add CORS-related header to allow requests from your specific origin
-        },
+        headers: {},
         body: jsonEncode(userInfo),
       );
-
-      print(userInfo);
 
       if (res.statusCode == 200) {
         print("client added");
@@ -136,7 +153,8 @@ class _UserInfoPageState extends State<UserInfoPage> {
         print(res.statusCode);
       }
     } catch (e) {
-      print("Error1: $e");
+      // print("Error1: $e");
+      throw "$e";
     }
 
     final queryParams = {
@@ -148,9 +166,8 @@ class _UserInfoPageState extends State<UserInfoPage> {
           await http.get(Uri.parse(url).replace(queryParameters: queryParams));
       final resData = json.decode(res.body);
       userId = resData["id"];
-      print(res.body);
     } catch (e) {
-      print("Error2: $e");
+      throw "$e";
     }
     return userId;
   }

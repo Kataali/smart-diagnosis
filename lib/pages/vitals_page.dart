@@ -27,6 +27,7 @@ class _VitalsPageState extends State<VitalsPage> {
   late String userName;
   late String userId;
   final resultController = TextEditingController();
+  bool isLoading = false;
 
   final items = <String>[
     'Weight',
@@ -125,11 +126,25 @@ class _VitalsPageState extends State<VitalsPage> {
                 width: 300,
                 child: ElevatedButton(
                   onPressed: () async {
-                    addVitals();
-                    resultController.clear();
-                    final List<Vital> retrievedVitals = await getVitals();
-                    provider.emptyVitalsList();
-                    provider.mergeWithVitalList(retrievedVitals);
+                    if (resultController.value.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text("The results field cannot be empty"),
+                        ),
+                      );
+                    } else {
+                      setState(() {
+                        isLoading = true;
+                      });
+                      addVitals();
+                      resultController.clear();
+                      final List<Vital> retrievedVitals = await getVitals();
+                      provider.emptyVitalsList();
+                      provider.mergeWithVitalList(retrievedVitals);
+                      setState(() {
+                        isLoading = false;
+                      });
+                    }
                   },
                   style: ButtonStyle(
                     backgroundColor: MaterialStatePropertyAll(
@@ -142,7 +157,7 @@ class _VitalsPageState extends State<VitalsPage> {
                 ),
               ),
               const Padding(
-                padding: EdgeInsets.only(top: 35.0),
+                padding: EdgeInsets.symmetric(vertical: 35.0),
                 child: Text(
                   "Recorded Vitals",
                   style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
@@ -195,23 +210,28 @@ class _VitalsPageState extends State<VitalsPage> {
                                 );
                               },
                             )
-                          : const Padding(
-                              padding: EdgeInsets.only(top: 25.0),
-                              child: Column(
-                                children: [
-                                  Icon(
-                                    Icons.speaker_notes_off_outlined,
-                                    size: 200,
+                          : !isLoading
+                              ? const Column(
+                                  children: [
+                                    Icon(
+                                      Icons.speaker_notes_off_outlined,
+                                      size: 200,
+                                    ),
+                                    Text(
+                                      "No Logged Records Yet",
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                          fontSize: 18, color: Colors.red),
+                                    ),
+                                  ],
+                                )
+                              : const Center(
+                                  child: SizedBox(
+                                    height: 150,
+                                    width: 150,
+                                    child: CircularProgressIndicator(),
                                   ),
-                                  Text(
-                                    "No Logged Records Yet",
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                        fontSize: 18, color: Colors.red),
-                                  ),
-                                ],
-                              ),
-                            ),
+                                ),
                     ),
                   ),
                 ],

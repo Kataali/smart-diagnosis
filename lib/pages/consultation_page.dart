@@ -26,6 +26,8 @@ class _ConsultationPageState extends State<ConsultationPage> {
 
   late String userId;
 
+  bool isLoading = false;
+
   @override
   Widget build(BuildContext context) {
     userId = Provider.of<NameData>(context).userId;
@@ -36,130 +38,153 @@ class _ConsultationPageState extends State<ConsultationPage> {
         backgroundColor: Theme.of(context).colorScheme.inversePrimary,
         title: const Text("Consultation"),
       ),
-      body: Padding(
-        padding: const EdgeInsets.symmetric(horizontal: 15.0),
-        child: Column(children: [
-          SizedBox(
-            width: 350,
-            child: TextField(
-              decoration: const InputDecoration(labelText: "Complaint"),
-              controller: complaintsController,
-            ),
-          ),
-          SizedBox(
-            width: 350,
-            child: TextField(
-              decoration: const InputDecoration(labelText: "Note"),
-              controller: notesController,
-            ),
-          ),
-          Row(
-            mainAxisAlignment: MainAxisAlignment.end,
-            children: [
-              Padding(
-                padding: const EdgeInsets.only(right: 25.0),
-                child: RouteButton(onPressed: () {
-                  Navigator.pushNamed(context, PredictionPage.routeName);
-                }),
-              ),
-            ],
-          ),
-          Padding(
-            padding: const EdgeInsets.symmetric(vertical: 25.0),
-            child: SizedBox(
-              width: 300,
-              child: ElevatedButton(
-                onPressed: () async {
-                  fileComplaint();
-                  complaintsController.clear();
-                  notesController.clear();
-                  final List<Complaint> retrievedComplaints =
-                      await getComplaints();
-                  provider.emptyComplaintsList();
-                  provider.mergeWithComplaintsList(retrievedComplaints);
-                },
-                style: ButtonStyle(
-                  backgroundColor: MaterialStatePropertyAll(
-                      Theme.of(context).colorScheme.inversePrimary),
-                ),
-                child: const Text(
-                  'File',
-                  style: TextStyle(color: Colors.black),
-                ),
+      body: SingleChildScrollView(
+        child: Padding(
+          padding: const EdgeInsets.symmetric(horizontal: 15.0),
+          child: Column(children: [
+            SizedBox(
+              width: 350,
+              child: TextField(
+                decoration: const InputDecoration(labelText: "Complaint"),
+                controller: complaintsController,
               ),
             ),
-          ),
-          const Padding(
-            padding: EdgeInsets.only(top: 35.0),
-            child: Text(
-              "Complaints",
-              style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+            SizedBox(
+              width: 350,
+              child: TextField(
+                decoration: const InputDecoration(labelText: "Note"),
+                controller: notesController,
+              ),
             ),
-          ),
-          Row(
-            children: [
-              Expanded(
-                child: SingleChildScrollView(
-                  child: provider.complaintsListLength != 0
-                      ? Consumer<ComplaintsProvider>(
-                          builder: (BuildContext context,
-                              ComplaintsProvider value, Widget? child) {
-                            return DataTable(
-                                headingRowColor: MaterialStateProperty.all(
-                                    Theme.of(context)
-                                        .colorScheme
-                                        .inversePrimary),
-                                headingTextStyle: const TextStyle(
-                                    fontWeight: FontWeight.bold),
-                                columns: const [
-                                  DataColumn(
-                                    label: Expanded(child: Text("Complaint")),
+            Row(
+              mainAxisAlignment: MainAxisAlignment.end,
+              children: [
+                Padding(
+                  padding: const EdgeInsets.only(right: 25.0),
+                  child: RouteButton(onPressed: () {
+                    Navigator.pushNamed(context, PredictionPage.routeName);
+                  }),
+                ),
+              ],
+            ),
+            Padding(
+              padding: const EdgeInsets.symmetric(vertical: 25.0),
+              child: SizedBox(
+                width: 300,
+                child: ElevatedButton(
+                  onPressed: () async {
+                    if (complaintsController.value.text.isEmpty ||
+                        notesController.value.text.isEmpty) {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        const SnackBar(
+                          content: Text(
+                              "The complaints field or the notes cannot be EMPTY"),
+                        ),
+                      );
+                    } else {
+                      setState(() {
+                        isLoading = true;
+                      });
+                      fileComplaint();
+                      complaintsController.clear();
+                      notesController.clear();
+                      final List<Complaint> retrievedComplaints =
+                          await getComplaints();
+                      provider.emptyComplaintsList();
+                      provider.mergeWithComplaintsList(retrievedComplaints);
+                      setState(() {
+                        isLoading = false;
+                      });
+                    }
+                  },
+                  style: ButtonStyle(
+                    backgroundColor: MaterialStatePropertyAll(
+                        Theme.of(context).colorScheme.inversePrimary),
+                  ),
+                  child: const Text(
+                    'File',
+                    style: TextStyle(color: Colors.black),
+                  ),
+                ),
+              ),
+            ),
+            const Padding(
+              padding: EdgeInsets.symmetric(vertical: 35.0),
+              child: Text(
+                "Complaints",
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 18),
+              ),
+            ),
+            Row(
+              children: [
+                Expanded(
+                  child: SingleChildScrollView(
+                    child: provider.complaintsListLength != 0
+                        ? Consumer<ComplaintsProvider>(
+                            builder: (BuildContext context,
+                                ComplaintsProvider value, Widget? child) {
+                              return DataTable(
+                                  headingRowColor: MaterialStateProperty.all(
+                                      Theme.of(context)
+                                          .colorScheme
+                                          .inversePrimary),
+                                  headingTextStyle: const TextStyle(
+                                      fontWeight: FontWeight.bold),
+                                  columns: const [
+                                    DataColumn(
+                                      label: Expanded(child: Text("Complaint")),
+                                    ),
+                                    DataColumn(
+                                      label: Text("Note"),
+                                    ),
+                                  ],
+                                  rows: List.generate(
+                                    provider.complaintsListLength,
+                                    (index) {
+                                      Complaint complaint =
+                                          provider.getComplaintByIndex(index);
+                                      return DataRow(
+                                        cells: <DataCell>[
+                                          DataCell(
+                                            Text(complaint.complaintName),
+                                          ),
+                                          DataCell(
+                                            Text(complaint.note),
+                                          ),
+                                        ],
+                                      );
+                                    },
+                                  ));
+                            },
+                          )
+                        : !isLoading
+                            ? const Column(
+                                children: [
+                                  Icon(
+                                    Icons.speaker_notes_off_outlined,
+                                    size: 200,
                                   ),
-                                  DataColumn(
-                                    label: Text("Note"),
+                                  Text(
+                                    "No Logged Complaints Yet",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                        fontSize: 18, color: Colors.red),
                                   ),
                                 ],
-                                rows: List.generate(
-                                  provider.complaintsListLength,
-                                  (index) {
-                                    Complaint complaint =
-                                        provider.getComplaintByIndex(index);
-                                    return DataRow(
-                                      cells: <DataCell>[
-                                        DataCell(
-                                          Text(complaint.complaintName),
-                                        ),
-                                        DataCell(
-                                          Text(complaint.note),
-                                        ),
-                                      ],
-                                    );
-                                  },
-                                ));
-                          },
-                        )
-                      : const Padding(
-                          padding: EdgeInsets.only(top: 25.0),
-                          child: Column(
-                            children: [
-                              Icon(
-                                Icons.speaker_notes_off_outlined,
-                                size: 200,
+                              )
+                            : const Center(
+                                child: SizedBox(
+                                  height: 150,
+                                  width: 150,
+                                  child: CircularProgressIndicator(),
+                                ),
                               ),
-                              Text(
-                                "No Logged Complaints Yet",
-                                textAlign: TextAlign.center,
-                                style:
-                                    TextStyle(fontSize: 18, color: Colors.red),
-                              ),
-                            ],
-                          ),
-                        ),
+                  ),
                 ),
-              ),
-            ],
-          )
-        ]),
+              ],
+            )
+          ]),
+        ),
       ),
     );
   }
